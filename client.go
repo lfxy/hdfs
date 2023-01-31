@@ -13,6 +13,8 @@ import (
 	"github.com/colinmarc/hdfs/v2/hadoopconf"
 	hdfs "github.com/colinmarc/hdfs/v2/internal/protocol/hadoop_hdfs"
 	"github.com/colinmarc/hdfs/v2/internal/rpc"
+	"github.com/jcmturner/gokrb5/v8/config"
+	"github.com/jcmturner/gokrb5/v8/keytab"
 	krb "gopkg.in/jcmturner/gokrb5.v7/client"
 )
 
@@ -119,10 +121,47 @@ func ClientOptionsFromConf(conf hadoopconf.HadoopConf) ClientOptions {
 	return options
 }
 
+func getClientFromKeytab() (*krb.Client, error) {
+    configPath := os.Getenv("KRB5_CONFIG")
+    if configPath == "" {
+        configPath = "/etc/krb5.conf"
+    }
+
+    cfg, err := config.Load(configPath)
+    if err != nil {
+      return nil, err
+    }
+
+    principal_name := os.Getenv("KRB5PRINCIPAL")
+    keytab_name := os.Getenv("KRB5KEYTAB")
+    if principal_name == "" || keytab_name == "" {
+        return nil, errors.New("kerberos env is error!")
+    }
+
+    kt, err := keytab.Load(keytab_name)
+    if err != nil {
+        return nil, err
+    }
+    principal_var := strings.Split(principal_name, "@")
+    if len(principal_var) != 2 {
+        return nil, errors.New("principal_name is error")
+    }
+    client := krb.NewWithKeytab(principal_var[0], principal_var[1], kt, cfg)
+    client.Login()
+
+    return client, nil
+}
+
 // NewClient returns a connected Client for the given options, or an error if
 // the client could not be created.
 func NewClient(options ClientOptions) (*Client, error) {
 	var err error
+    if options.KerberosClient != nil {
+        options.KerberosClient, err = getClientFromKeytab()
+        if err != nil {
+            return nil, err
+        }
+    }
 	if options.KerberosClient != nil && options.KerberosClient.Credentials == nil {
 		return nil, errors.New("kerberos enabled, but kerberos client is missing credentials")
 	}
