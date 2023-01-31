@@ -15,7 +15,9 @@ import (
 	"github.com/colinmarc/hdfs/v2/internal/rpc"
 	"github.com/jcmturner/gokrb5/v8/config"
 	"github.com/jcmturner/gokrb5/v8/keytab"
-	krb "gopkg.in/jcmturner/gokrb5.v7/client"
+
+	//krb "gopkg.in/jcmturner/gokrb5.v7/client"
+	krb "github.com/jcmturner/gokrb5/v8/client"
 )
 
 // Client represents a connection to an HDFS cluster. A Client will
