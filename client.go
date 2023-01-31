@@ -149,7 +149,7 @@ func getClientFromKeytab() (*krb.Client, error) {
     if len(principal_var) != 2 {
         return nil, errors.New("principal_name is error")
     }
-    client := krb.NewWithKeytab(principal_var[0], principal_var[1], kt, cfg)
+    client := krb.NewClientWithKeytab(principal_var[0], principal_var[1], kt, cfg)
     client.Login()
 
     return client, nil
